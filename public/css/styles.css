@@ -51,7 +51,7 @@ p {
   color: #00204a;
 }
 
-form {
+form.item {     /* Added '.item' to further specify application */
   text-align: center;
   margin-left: 20px;
 }

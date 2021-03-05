@@ -2,15 +2,22 @@
 
   <div class="box" id="heading">
     <h1> <%= listTitle %> </h1>
-  </div>
-
+  </div >
   <div class="box">
-    <% for (let i=0; i<newListItems.length; i++) { %>
-      <div class="item">
-        <input type="checkbox">
-        <p><%=  newListItems[i]  %></p>
-      </div>
-      <% } %>
+      <!-- Refactored for loop into .forEach(). 345. Added 'form' to allow for posting of identified items to be removed -->
+      <% newListItems.forEach(function(item) { %>
+
+        <form action="/delete" method="post">
+          <div class="item">
+            <!-- Added 'name'and 'onChange' properties; 'onChange' submits form when state of element is changed, and name gives an identifier for the data being submitted -->
+            <!-- Added 'value' with value of Mongo Doc 'item._id' in order to assign a readable value so that once form is submitted, can determine which items are checked -->
+            <input type="checkbox" name="checkbox" value="<%= item._id %>" onChange="this.form.submit()">
+            <!-- Added '.name' below in order to access only the name property, rather than the whole document -->
+            <p class="item"><%= item.name %></p>
+          </div>
+        </form>
+        
+      <% }); %>
 
       <form class="item" action="/" method="post">
         <input type="text" name="newItem" placeholder="New Item" autocomplete="off">
