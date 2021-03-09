@@ -36,6 +36,14 @@ const item3 = new Item ({
 
 const defaultItems = [item1, item2, item3];
 
+/***** 346. Schema added to allow for dynamic list creation/access *****/
+const listSchema = new mongoose.Schema({
+  name: String,
+  items: [itemsSchema]     // Identifies that a list doc will have a parameter that contains an array of items, which are docs themselves based on the 'itemsSchema'
+});
+
+const List = new mongoose.model("List", listSchema);
+
 
 app.get("/", function(req, res) {
 
@@ -54,6 +62,29 @@ app.get("/", function(req, res) {
     }
   });
 
+});
+
+app.get("/:customListName", function(req, res) {      // 346. Added to allow for dynamic list creation/accessing
+  const customListName = req.params.customListName;
+  
+  List.findOne({name: customListName}, function(err, foundList) {     // '.findOne' returns object, as opposed to '.find()' which is essentially find all, which returns an array
+    if(!err) {
+      if(!foundList) {      // Since cannot check array lenght as before, check if exists/list is found
+        // Create a new list
+        const list = new List ({
+          name: customListName,
+          items: defaultItems
+        });
+
+        // Timing issue between 'list.save' and 'res.redirect' that results in multiple instances of the first doc created for the 'list' collection
+        list.save();
+        res.redirect("/" + customListName);     // Instructs the reloading of custom page on the application. Necessary as 'list.save()' only updates the db, not the app/webpage
+      }else {
+        // Show existing list
+        res.render("list", {listTitle: foundList.name, newListItems: foundList.items});     // Use created object 'foundList''s parameters to populate rendered page
+      }
+    }
+  });
 });
 
 app.post("/", function(req, res){
@@ -90,9 +121,9 @@ app.post("/delete", function(req, res) {     // Added to handle checkbox occuren
   });
 });
 
-app.get("/work", function(req,res){
-  res.render("list", {listTitle: "Work List", newListItems: workItems});
-});
+// app.get("/work", function(req,res){      // Removed and replaced to allow for dynamic lists
+//   res.render("list", {listTitle: "Work List", newListItems: workItems});
+// });
 
 app.get("/about", function(req, res){
   res.render("about");
