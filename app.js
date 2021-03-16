@@ -16,6 +16,10 @@ const workItems = []; */
 
 mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true, useUnifiedTopology: true});      // Create new db inside MongoDB
 
+/********** DEPRECATION: This was an addition that was made by me in response to a deprication warning from Mongoose regarding '.findById...''s and '.findOneAnd...''s **********/
+mongoose.set('useFindAndModify', false);
+/********** DEPRECATION END **********/
+
 const itemsSchema = new mongoose.Schema({     // Create schema
   name: String
 });
@@ -39,7 +43,7 @@ const defaultItems = [item1, item2, item3];
 /***** 346. Schema added to allow for dynamic list creation/access *****/
 const listSchema = new mongoose.Schema({
   name: String,
-  items: [itemsSchema]     // Identifies that a list doc will have a parameter that contains an array of items, which are docs themselves based on the 'itemsSchema'
+  items: [itemsSchema]     // Identifies that a list doc will have a field that contains an array of items, which are docs themselves based on the 'itemsSchema'
 });
 
 const List = new mongoose.model("List", listSchema);
@@ -55,8 +59,10 @@ app.get("/", function(req, res) {
         }else {
           console.log("Successfully inserted documents");
         }
+        res.redirect("/");      // Redirect to home page to implement results of conditional
       });
-      res.redirect("/");      // Redirect to home page to implement results of conditional
+      //res.redirect("/");      // Angela originally placed the redirect here, but this would result in the BulkWriteError: E11000 because '.insertMany()' is an asynchronouse task, so calling '.redirect()' 
+                                // outside of the method causes the redirect to be called over and over while the inserting is still occuring. This also causes the '.insertMany()' to be triggered more than once
     }else {
       res.render("list", {listTitle: "Today", newListItems: foundItems});     // If default items already exist, render 
     }
@@ -90,16 +96,29 @@ app.get("/:customListName", function(req, res) {      // 346. Added to allow for
 app.post("/", function(req, res){
 
   const itemName = req.body.newItem;
+  const listName = req.body.list;     // 347. Added to assign a custom list name to a variable for usage
 
   const item = new Item ({
     name: itemName
   });
 
-  item.save();      // Mongoose shortcut, circumvents using '.insertOne'
+  if (listName === "Today") {     // 347. Added to distinguish where to insert newly created Item document
+    item.save();      // Mongoose shortcut, circumvents using '.insertOne'
 
-  res.redirect("/");      // Without this step, item will be inserted into db, but page will not be re-rendered with new item
+    res.redirect("/");      // Without this step, item will be inserted into db, but page will not be re-rendered with new item
+  }else {
+    List.findOne({name: listName}, function(err, foundList) {     // 347. Can use 'foundList' as document, since the 'lists' collection is comprised of documents containing embedded documents
+      if(!err) {  
+        foundList.items.push(item);      // 347. Can access the lists 'items' property of the document. Because the 'lists' collection schema includes the 'items' field which is an array of items, to add an item requires the 'push()' method rather to add to this array rather than simply saving
+        foundList.save();     // 347. Saves the newly updated document
+    
+          res.redirect("/" + listName);
+      }
+    });
+  }
 
-//   if (req.body.list === "Work") {
+
+//   if (req.body.list === "Work") {      // Original solution pre-database usage
 //     workItems.push(item);
 //     res.redirect("/work");
 //   } else {
