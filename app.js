@@ -15,7 +15,8 @@ app.use(express.static("public"));
 /* const items = ["Buy Food", "Cook Food", "Eat Food"];     // Old method for storing list data
 const workItems = []; */
 
-mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false});      // Create new db inside MongoDB
+// mongoose.connect("mongodb://localhost:27017/todolistDB", {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false});      // Create new db inside MongoDB
+mongoose.connect("mongodb+srv://admin-kristian:Test123@cluster0.c8pxk.mongodb.net/todolistDB", {useNewUrlParser: true, useUnifiedTopology: true, useFindAndModify: false});      // 351. Changed URL to allow for use of an MongoDB Atlas cluster in order to host database
 
 /********** DEPRECATION: This was an addition that was made by me in response to a deprication warning from Mongoose regarding '.findById...''s and '.findOneAnd...''s **********/
 //mongoose.set('useFindAndModify', false);      // Added to the above '.connect()'
